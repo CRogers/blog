@@ -5,9 +5,10 @@ date:   2014-04-20 16:28:29
 categories: haskell
 ---
 
-# Woop
+Woop
+===
 
-> {-# LANGUAGE PatternSynonyms, DeriveFunctor #-}
+> {-# LANGUAGE PatternSynonyms, DeriveFunctor, UndecidableInstances #-}
 
 Foo bar baz
 
@@ -17,11 +18,22 @@ Foo bar baz
 > 	| Add' a a
 > 	| Sub' a a
 > 	| Mul' a a
-> 	deriving (Functor)
+> 	deriving (Show, Functor)
 
 Quux
 
 > newtype Fix f = In { out :: f (Fix f) }
+
+Noop
+
+> instance Show (f (Fix f)) => Show (Fix f) where
+>     show (In f) = "(" ++ show f ++ ")"
+>
+> instance Eq (f (Fix f)) => Eq (Fix f) where
+>     (In x) == (In y) = x == y
+>
+> instance Ord (f (Fix f)) => Ord (Fix f) where
+>     (In x) `compare` (In y) = x `compare` y
 
 > type Expr = Fix Expr'
 

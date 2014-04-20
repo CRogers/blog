@@ -34,9 +34,8 @@ module Jekyll
 			buffer = ""
 
 			content.lines.each do |l|
-				puts l
 				l.freeze
-				if l.start_with? '> ' then
+				if l.start_with? '>' then
 					if not in_block then
 						out << render_markdown(buffer)
 						buffer = ""
