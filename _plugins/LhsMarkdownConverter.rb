@@ -29,14 +29,22 @@ module Jekyll
 		end
 
 		def convert(content)
+			matches = /\[# links #\](.*?)\[# endlinks #\]/m.match(content)
+			links = ""
+			if matches then
+				links = matches[1]
+				content = matches.pre_match + matches.post_match
+			end
+
 			in_block = false
 			out = ""
 			buffer = ""
 
 			content.lines.each do |l|
 				l.freeze
-				if l.start_with? '>' then
+				if l =~ /^[>\\]/ then
 					if not in_block then
+						buffer << links
 						out << render_markdown(buffer)
 						buffer = ""
 					end
@@ -57,10 +65,11 @@ module Jekyll
 			if in_block then
 				out << render_highlighted(buffer)
 			else
+				buffer << links
 				out << render_markdown(buffer)
 			end
 
-			@markdown.convert(out)
+			out
 		end
 	end
 end

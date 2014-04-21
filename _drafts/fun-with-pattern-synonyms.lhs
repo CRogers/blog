@@ -5,7 +5,7 @@ date:   2014-04-20 16:28:29
 categories: haskell
 ---
 
-One of the awesome new features in GHC 7.8 is Pattern Synonyms - they allow you give a name to a pattern and reuse them so you don't need to write the same boilerplate in multiple places. Pattern Synonyms help in a lot of situations, but are especially useful when we try to 
+[Pattern Synonyms][pattern-synonyms] are one of the awesome new features in GHC 7.8 - they allow you give a name to a pattern and reuse them so you don't need to write the same boilerplate in multiple places. Pattern Synonyms help in a lot of situations, but are especially useful when we try to 
 use recursion schemes to abstract away how we recurse over data strutures. We'll be focusing on this today.
 
 First off, let's define the usual preamble we need for the functions we'll write later on:
@@ -97,33 +97,60 @@ But we've now we have all this `In` noise in our pattern matches and on the righ
 > pattern Sub a b = In (Sub' a b)
 > pattern Mul a b = In (Mul' a b)
 
-`pattern PName a <- [pattern]` is called a ? pattern and only allows us to use it for matching. We have used the `pattern PName a = [pattern]` syntax which allows us to use it in the reverse - we can now write `Num 3` as an expression and this will expand out to `In (Num 3)`. `simplify` now looks like:
+`pattern PName a <- [pattern]` is called a [uni-directional synonym][uni-dir-synonym] and only allows us to use it for matching. We have used the `pattern PName a = [pattern]` syntax ([simply-bidirectional synonym][simply-bi-dir-synonym]) which allows us to use it in the reverse - we can now write `Num 3` as an expression and this will expand out to `In (Num 3)`. `simplify` now looks like:
 
 > simplify' :: Expr -> Expr
-> simplify' (Add (Num 0) b) = b
-> simplify' (Mul (Num 0) b) = Num 0
+> simplify' (Add (Num 0) b)       = b
+> simplify' (Mul (Num 0) b)       = Num 0
 > simplify' (Add (Num a) (Num b)) = Num $ a + b
 
 Much nicer! In fact, it looks very similar to the non-fixed `Expression` version. We can go even further and define patterns for `Zero` and `One` so we don't have to repeat `Num 0` and `Num 1`:
 
 > pattern Zero = Num 0
 > pattern One = Num 1
-
+>  
 > simplify'' :: Expr -> Expr
 > simplify'' (Add Zero b) = b
 > simplify'' (Mul Zero b) = Zero
-> simplify'' (Mul a One) = a
+> simplify'' (Mul a One)  = a
+
+This is actually easier to read than the original version!
+
+Simplifying Datatypes a la Carte
+---
+
+Wouter Swierstra's *[Data types a la carte][data-types-carte]* is a classic paper where he describes "a technique for assembling both data types and functions from isolated individual components" and so solving Wadler's [Expression Problem][expression-problem]. This section assumes that you've read the paper/understand the ideas behind it.
+
+Just as we have described in previous section, *Data types a la carte* uses fixed points of types. However, we can't just use our previous solution directly - in section 4 of the paper, "Automating injections", Swierstra uses smart constructors to avoid having to write `In` and `Inl`/`InR` everywhere. We can leverage Pattern Synonyms to use the exact same name for pattern matching and smart constructors. For example, the smart constructor for `Val`:
+
+\ val :: (Val :<: f) => Expr f -> Expr f
+\ val x :: inject (Val x)
+
+We can use the [explicitly-bidirectional synonym][explicitly-bi-dir-synonym] syntax to remove the need for this strange looking `val` function - we need our pattern matches to be the same but want to produce something different when we called the synonym in expressions.
+
+\ pattern Add' x y <- Add x y
+\   Add' x y = inject (Add x y)
+
+
 
 Problems
 ---
 
-We have to write out a new pattern for each variant we have in our fixed datatype. This could be avoided if we used Template Haskell to generate the patterns for us automatically; however Template Haskell does not currently support Pattern Synonyms. If you want to it too, [place a comment on this ticket][2] saying you are interested and it'll hopefully make it's way into GHC.
+We have to write out a new pattern for each variant we have in our fixed datatype. This could be avoided if we used Template Haskell to generate the patterns for us automatically; however Template Haskell does not currently support Pattern Synonyms. If you want to it too, [place a comment on this ticket][template-haskell-ticket] saying you are interested and it'll hopefully make it's way into GHC.
 
 The code
 ---
 
-This entire post is a Literate Haskell file you can load up in GHCi directly. You can [download it here][1].
+This entire post is a Literate Haskell file you can load up in GHCi directly. You can [download it here][lhs-file].
 
-[0]: http://patrickthomson.ghost.io/an-introduction-to-recursion-schemes/
-[1]: ?
-[2]: ?
+[# links #]
+[pattern-synonyms]: ?
+[uni-dir-synonym]: ?
+[simply-bi-dir-synonym]: ?
+[explicitly-bi-dir-synonym]: ?
+[intro-recursion-schemes]: http://patrickthomson.ghost.io/an-introduction-to-recursion-schemes/
+[data-types-carte]: ?
+[expression-problem]: ?
+[lhs-file]: ?
+[template-haskell-ticket]: ?
+[# endlinks #]
