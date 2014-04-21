@@ -116,7 +116,7 @@ Much nicer! In fact, it looks very similar to the non-fixed `Expression` version
 
 This is actually easier to read than the original version!
 
-Simplifying Datatypes a la Carte
+Datatypes a la Carte/Explicit Synonym Syntax
 ---
 
 Wouter Swierstra's *[Data types a la carte][data-types-carte]* is a classic paper where he describes "a technique for assembling both data types and functions from isolated individual components" and so solving Wadler's [Expression Problem][expression-problem]. This section assumes that you've read the paper/understand the ideas behind it.
@@ -124,14 +124,22 @@ Wouter Swierstra's *[Data types a la carte][data-types-carte]* is a classic pape
 Just as we have described in previous section, *Data types a la carte* uses fixed points of types. However, we can't just use our previous solution directly - in section 4 of the paper, "Automating injections", Swierstra uses smart constructors to avoid having to write `In` and `Inl`/`InR` everywhere. We can leverage Pattern Synonyms to use the exact same name for pattern matching and smart constructors. For example, the smart constructor for `Val`:
 
 \ val :: (Val :<: f) => Expr f -> Expr f
-\ val x :: inject (Val x)
+\ val x = inject (Val x)
 
 We can use the [explicitly-bidirectional synonym][explicitly-bi-dir-synonym] syntax to remove the need for this strange looking `val` function - we need our pattern matches to be the same but want to produce something different when we called the synonym in expressions.
 
 \ pattern Add' x y <- Add x y
 \   Add' x y = inject (Add x y)
 
+Now we can write code like:
 
+\ instance Incr Val where
+\   incr (Val i) = Val $ i + 1
+
+Instead of having to use a different name for the smart constructor:
+
+\ instance Incr Val where
+\   incr (Val i) = val $ i + 1
 
 Problems
 ---
